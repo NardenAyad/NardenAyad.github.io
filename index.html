@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stroop Challenge</title>
     <style>
         body {
@@ -16,22 +17,25 @@
             height: 100vh;
             margin: 0;
             transition: background 0.2s;
+            padding: 1rem;
         }
 
         .game-container {
             background: #2e303e;
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
             text-align: center;
-            width: 360px;
+            width: 100%;
+            max-width: 400px;
             position: relative;
         }
 
         .word {
-            font-size: 4rem;
+            font-size: 3rem;
             margin-bottom: 1rem;
             animation: pop 0.3s ease;
+            word-break: break-word;
         }
 
         @keyframes pop {
@@ -43,18 +47,19 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
         }
 
         .color-button {
-            padding: 0.8rem 1.5rem;
-            font-size: 1rem;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             color: #fff;
-            flex: 1 1 40%;
+            flex: 1 1 45%;
             transition: transform 0.1s ease;
+            min-width: 0;
         }
 
         .color-button:hover {
@@ -63,47 +68,60 @@
 
         .scoreboard {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
             margin-top: 1rem;
+            gap: 0.5rem;
         }
 
-        .score, .timer, .level {
-            font-size: 1.2rem;
+        .score, .timer, .level, .streak {
+            font-size: 1rem;
+            flex: 1 1 45%;
+            text-align: center;
         }
 
-        .start-overlay, .score-overlay {
+        .start-overlay,
+        .score-overlay {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(30,31,38,0.95);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(30, 31, 38, 0.95);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             border-radius: 15px;
             padding: 1rem;
+            box-sizing: border-box;
         }
 
-        .start-overlay h2, .score-overlay h2 {
+        .start-overlay h2,
+        .score-overlay h2 {
             margin-bottom: 0.5rem;
+            font-size: 1.5rem;
         }
 
-        .start-overlay p, .score-overlay p {
+        .start-overlay p,
+        .score-overlay p {
             font-size: 0.9rem;
             color: #ccc;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
             line-height: 1.4;
         }
 
         .btn-large {
-            padding: 0.8rem 2rem;
-            font-size: 1.2rem;
+            padding: 0.6rem 1.5rem;
+            font-size: 1rem;
             background: #f39c12;
             color: #fff;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             transition: transform 0.1s;
+            width: 80%;
+            max-width: 200px;
         }
 
         .btn-large:hover {
@@ -111,15 +129,15 @@
         }
 
         .fun-fact {
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
+            margin-top: 1rem;
+            font-size: 0.8rem;
             color: #ccc;
-            min-height: 3rem;
+            min-height: 2.5rem;
         }
 
         .footer {
-            margin-top: 1.5rem;
-            font-size: 0.8rem;
+            margin-top: 1rem;
+            font-size: 0.7rem;
             color: #888;
         }
 
@@ -129,8 +147,14 @@
 
         @keyframes shake {
             0%,100% { transform: translateX(0); }
-            20%,60% { transform: translateX(-10px); }
-            40%,80% { transform: translateX(10px); }
+            20%,60% { transform: translateX(-8px); }
+            40%,80% { transform: translateX(8px); }
+        }
+
+        @media (min-width: 600px) {
+            .word { font-size: 4rem; }
+            .color-button { font-size: 1rem; padding: 0.8rem 1.5rem; }
+            .score, .timer, .level, .streak { font-size: 1.2rem; }
         }
     </style>
 </head>
@@ -142,21 +166,21 @@
         <div class="scoreboard">
             <div class="level" id="level">Level: 1</div>
             <div class="score" id="score">Score: 0</div>
+            <div class="streak" id="streak">Streak: 0</div>
             <div class="timer" id="timer">Time: 5s</div>
         </div>
         <div class="fun-fact" id="funFact"></div>
 
         <div class="start-overlay" id="startOverlay">
             <h2>Welcome to Stroop Challenge!</h2>
-            <p>Test your brain: select the button that matches the <strong>COLOR</strong> of the word, not the text!<br>
-            You have limited time each round, and it gets faster as you go. Can you conquer all levels and keep your cool?</p>
+            <p>Match the <strong>COLOR</strong> not the word. Levels heat up, streaks boost time, and sudden-death awaits at rounds 5 & 10!</p>
             <button class="btn-large" id="startBtn">Start Game</button>
         </div>
 
         <div class="score-overlay" id="scoreOverlay" style="display:none">
             <h2>Game Over!</h2>
             <p>Your final score is:</p>
-            <div class="score" id="finalScore" style="font-size:2rem; margin: 1rem 0;"></div>
+            <div class="score" id="finalScore" style="font-size:2rem; margin:1rem 0"></div>
             <button class="btn-large" id="restartBtn">Play Again</button>
         </div>
 
@@ -171,8 +195,7 @@
             "🧠 Your brain sees words faster than colors.",
             "⏱️ Tension boosts performance by 25%!"
         ];
-
-        let score=0, round=0, level=1, timeLeft=5, timerId;
+        let score=0, round=0, level=1, streak=0, timeLeft=5, timerId;
         const totalRounds=10;
         let correctColor='';
 
@@ -181,6 +204,7 @@
         const scoreDiv = document.getElementById('score');
         const timerDiv = document.getElementById('timer');
         const levelDiv = document.getElementById('level');
+        const streakDiv = document.getElementById('streak');
         const funDiv = document.getElementById('funFact');
         const startOverlay = document.getElementById('startOverlay');
         const scoreOverlay = document.getElementById('scoreOverlay');
@@ -191,16 +215,11 @@
         startBtn.onclick = () => { startOverlay.style.display='none'; initGame(); };
         restartBtn.onclick = () => { scoreOverlay.style.display='none'; initGame(); };
 
-        function shuffleButtons() {
-            const order = colors.slice().sort(() => Math.random() - 0.5);
-            return order;
-        }
-
+        function shuffle(arr) { return arr.sort(() => Math.random()-0.5); }
         function displayButtons() {
-            btnContainer.innerHTML = '';
-            const order = shuffleButtons();
-            order.forEach(color=>{
-                const btn = document.createElement('button');
+            btnContainer.innerHTML='';
+            shuffle(colors).forEach(color=>{
+                const btn=document.createElement('button');
                 btn.className='color-button';
                 btn.style.background=colorHex[color];
                 btn.innerText=color;
@@ -211,70 +230,58 @@
 
         function newRound() {
             clearInterval(timerId);
-            if (round>=totalRounds) return endGame();
-            round++; level = Math.ceil(round/2);
-            levelDiv.innerText = `Level: ${level}`;
-
-            // frustration: reduce time further if wrong previously
-            timeLeft = Math.max(1, 6 - level);
-            timerDiv.innerText = `Time: ${timeLeft}s`;
-            timerId = setInterval(countdown,1000);
-
-            const textColor = colors[Math.floor(Math.random()*colors.length)];
-            correctColor = textColor;
-            const wordText = colors[Math.floor(Math.random()*colors.length)];
-            wordDiv.innerText=wordText;
-            wordDiv.style.color=colorHex[textColor];
-            wordDiv.classList.remove('shake');
-
+            if(round>=totalRounds) return endGame();
+            round++; level=Math.ceil(round/2);
+            levelDiv.innerText=`Level: ${level}`;
+            const isSudden = (round===5||round===10);
+            timeLeft = isSudden? 1 : Math.max(1, 6-level + Math.floor(streak/3));
+            timerDiv.innerText=`Time: ${timeLeft}s`;
+            timerId=setInterval(countdown,1000);
+            const wordColor=shuffle(colors)[0]; correctColor=wordColor;
+            wordDiv.innerText=shuffle(colors)[0];
+            wordDiv.style.color=colorHex[wordColor];
+            wordDiv.classList.remove('shake'); funDiv.innerText='';
             displayButtons();
         }
 
         function countdown() {
-            timeLeft--;
-            timerDiv.innerText = `Time: ${timeLeft}s`;
-            if (timeLeft<=0) {
-                clearInterval(timerId);
-                applyPenalty();
-                newRound();
-            }
+            timeLeft--; timerDiv.innerText=`Time: ${timeLeft}s`;
+            if(timeLeft<=0) { clearInterval(timerId); handleWrong(); }
         }
 
         function checkAnswer(choice) {
             clearInterval(timerId);
-            if (choice===correctColor) {
-                score++;
-            } else {
-                applyPenalty();
-            }
-            updateScore();
+            if(choice===correctColor) handleCorrect(); else handleWrong();
+        }
+
+        function handleCorrect() {
+            score++; streak++; updateStats();
+            if(streak>0 && streak%3===0) timeLeft+=2;
             newRound();
         }
 
-        function applyPenalty() {
-            // shake and flash
-            document.body.style.background = '#8e0e0e';
-            setTimeout(()=> document.body.style.background='#1e1f26', 200);
-            wordDiv.classList.add('shake');
-            funDiv.innerText = funFacts[Math.floor(Math.random()*funFacts.length)];
-            score = Math.max(0, score - 1);
+        function handleWrong() {
+            if(round===5||round===10) return endGame();
+            score=Math.max(0,score-1); streak=0;
+            document.body.style.background='#8e0e0e';
+            setTimeout(()=>document.body.style.background='#1e1f26',200);
+            wordDiv.classList.add('shake'); funDiv.innerText=funFacts[Math.floor(Math.random()*funFacts.length)];
+            updateStats();
+            newRound();
         }
 
-        function updateScore() {
-            scoreDiv.innerText = `Score: ${score}`;
+        function updateStats() {
+            scoreDiv.innerText=`Score: ${score}`;
+            streakDiv.innerText=`Streak: ${streak}`;
         }
 
         function endGame() {
-            clearInterval(timerId);
-            scoreOverlay.style.display='flex';
-            finalScoreDiv.innerText = `${score} / ${totalRounds}`;
+            clearInterval(timerId); scoreOverlay.style.display='flex'; finalScoreDiv.innerText=`${score} / ${totalRounds}`;
         }
 
         function initGame() {
-            score=0; round=0; level=1;
-            updateScore();
-            funDiv.innerText='';
-            scoreOverlay.style.display='none';
+            score=0; round=0; level=1; streak=0;
+            updateStats(); funDiv.innerText=''; scoreOverlay.style.display='none';
             newRound();
         }
     </script>
