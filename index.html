@@ -15,6 +15,7 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
+            transition: background 0.2s;
         }
 
         .game-container {
@@ -66,11 +67,11 @@
             margin-top: 1rem;
         }
 
-        .score, .timer {
+        .score, .timer, .level {
             font-size: 1.2rem;
         }
 
-        .start-overlay {
+        .start-overlay, .score-overlay {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
@@ -83,11 +84,11 @@
             padding: 1rem;
         }
 
-        .start-overlay h2 {
+        .start-overlay h2, .score-overlay h2 {
             margin-bottom: 0.5rem;
         }
 
-        .start-overlay p {
+        .start-overlay p, .score-overlay p {
             font-size: 0.9rem;
             color: #ccc;
             margin-bottom: 1.5rem;
@@ -139,6 +140,7 @@
         <div class="word" id="word">Stroop Challenge</div>
         <div class="buttons" id="buttons"></div>
         <div class="scoreboard">
+            <div class="level" id="level">Level: 1</div>
             <div class="score" id="score">Score: 0</div>
             <div class="timer" id="timer">Time: 5s</div>
         </div>
@@ -147,11 +149,11 @@
         <div class="start-overlay" id="startOverlay">
             <h2>Welcome to Stroop Challenge!</h2>
             <p>Test your brain: select the button that matches the <strong>COLOR</strong> of the word, not the text!<br>
-            You have limited time each round, and it gets faster as you go. Good luck!</p>
+            You have limited time each round, and it gets faster as you go. Can you conquer all levels and keep your cool?</p>
             <button class="btn-large" id="startBtn">Start Game</button>
         </div>
 
-        <div class="start-overlay" id="scoreOverlay" style="display:none">
+        <div class="score-overlay" id="scoreOverlay" style="display:none">
             <h2>Game Over!</h2>
             <p>Your final score is:</p>
             <div class="score" id="finalScore" style="font-size:2rem; margin: 1rem 0;"></div>
@@ -165,19 +167,20 @@
         const colors = ['Red','Green','Blue','Yellow','Purple','Orange'];
         const colorHex = { Red:'#e74c3c',Green:'#2ecc71',Blue:'#3498db',Yellow:'#f1c40f',Purple:'#9b59b6',Orange:'#e67e22' };
         const funFacts = [
-            "🔬 Research shows Stroop tasks improve cognitive flexibility!",
-            "🧠 Your brain processes words 60,000 times faster than colors.",
-            "⏱️ Pressure makes performance spike by 25%!"
+            "🔬 Stroop improves cognitive flexibility!",
+            "🧠 Your brain sees words faster than colors.",
+            "⏱️ Tension boosts performance by 25%!"
         ];
 
-        let score=0, round=0, timeLeft=5, timerId;
-        const totalRounds=7;
+        let score=0, round=0, level=1, timeLeft=5, timerId;
+        const totalRounds=10;
         let correctColor='';
 
         const wordDiv = document.getElementById('word');
         const btnContainer = document.getElementById('buttons');
         const scoreDiv = document.getElementById('score');
         const timerDiv = document.getElementById('timer');
+        const levelDiv = document.getElementById('level');
         const funDiv = document.getElementById('funFact');
         const startOverlay = document.getElementById('startOverlay');
         const scoreOverlay = document.getElementById('scoreOverlay');
@@ -185,18 +188,18 @@
         const restartBtn = document.getElementById('restartBtn');
         const finalScoreDiv = document.getElementById('finalScore');
 
-        startBtn.onclick = () => {
-            startOverlay.style.display = 'none';
-            initGame();
-        };
-        restartBtn.onclick = () => {
-            scoreOverlay.style.display = 'none';
-            initGame();
-        };
+        startBtn.onclick = () => { startOverlay.style.display='none'; initGame(); };
+        restartBtn.onclick = () => { scoreOverlay.style.display='none'; initGame(); };
+
+        function shuffleButtons() {
+            const order = colors.slice().sort(() => Math.random() - 0.5);
+            return order;
+        }
 
         function displayButtons() {
             btnContainer.innerHTML = '';
-            colors.forEach(color=>{
+            const order = shuffleButtons();
+            order.forEach(color=>{
                 const btn = document.createElement('button');
                 btn.className='color-button';
                 btn.style.background=colorHex[color];
@@ -209,8 +212,11 @@
         function newRound() {
             clearInterval(timerId);
             if (round>=totalRounds) return endGame();
-            round++;
-            timeLeft = Math.max(2, 6 - Math.floor(round/2));
+            round++; level = Math.ceil(round/2);
+            levelDiv.innerText = `Level: ${level}`;
+
+            // frustration: reduce time further if wrong previously
+            timeLeft = Math.max(1, 6 - level);
             timerDiv.innerText = `Time: ${timeLeft}s`;
             timerId = setInterval(countdown,1000);
 
@@ -220,6 +226,8 @@
             wordDiv.innerText=wordText;
             wordDiv.style.color=colorHex[textColor];
             wordDiv.classList.remove('shake');
+
+            displayButtons();
         }
 
         function countdown() {
@@ -227,7 +235,7 @@
             timerDiv.innerText = `Time: ${timeLeft}s`;
             if (timeLeft<=0) {
                 clearInterval(timerId);
-                wrongFeedback();
+                applyPenalty();
                 newRound();
             }
         }
@@ -237,15 +245,19 @@
             if (choice===correctColor) {
                 score++;
             } else {
-                wrongFeedback();
+                applyPenalty();
             }
             updateScore();
             newRound();
         }
 
-        function wrongFeedback() {
+        function applyPenalty() {
+            // shake and flash
+            document.body.style.background = '#8e0e0e';
+            setTimeout(()=> document.body.style.background='#1e1f26', 200);
             wordDiv.classList.add('shake');
             funDiv.innerText = funFacts[Math.floor(Math.random()*funFacts.length)];
+            score = Math.max(0, score - 1);
         }
 
         function updateScore() {
@@ -254,17 +266,15 @@
 
         function endGame() {
             clearInterval(timerId);
-            startOverlay.style.display = 'none';
-            scoreOverlay.style.display = 'flex';
+            scoreOverlay.style.display='flex';
             finalScoreDiv.innerText = `${score} / ${totalRounds}`;
         }
 
         function initGame() {
-            score=0; round=0;
+            score=0; round=0; level=1;
             updateScore();
-            displayButtons();
-            funDiv.innerText = '';
-            scoreOverlay.style.display = 'none';
+            funDiv.innerText='';
+            scoreOverlay.style.display='none';
             newRound();
         }
     </script>
